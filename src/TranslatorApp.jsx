@@ -1,4 +1,3 @@
-
 // Multilingual Conversation Translator (React + Supabase + OpenAI Whisper & GPT-4)
 // MVP implementation: Users join a session, speak, and see live translated text
 
@@ -6,9 +5,9 @@ import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { createClient } from '@supabase/supabase-js';
 
-// ✅ Updated to pull from Vite env variables
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// ✅ Pull from Vite env or fallback to hardcoded values for local testing
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://YOUR_REAL_PROJECT.supabase.co';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'YOUR_REAL_ANON_KEY';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 export default function TranslatorApp() {
