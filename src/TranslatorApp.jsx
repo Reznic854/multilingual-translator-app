@@ -4,11 +4,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
 import { createClient } from '@supabase/supabase-js';
 
+// Fallback hardcoded config (can be replaced with environment vars in production build tool)
 const SUPABASE_URL = 'https://your-project.supabase.co';
 const SUPABASE_ANON_KEY = 'your-anon-key';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -71,15 +69,18 @@ export default function TranslatorApp() {
   };
 
   return (
-    <div className="p-4 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Multilingual Conversation App</h1>
+    <div style={{ padding: '1rem', maxWidth: '600px', margin: 'auto' }}>
+      <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '1rem' }}>Multilingual Conversation App</h1>
 
       {!joined ? (
-        <div className="space-y-2">
-          <Button onClick={startSession}>Start New Session</Button>
-          <Input placeholder="Enter Session ID" onChange={(e) => setSessionId(e.target.value)} />
-          <Button onClick={joinSession}>Join Session</Button>
-          <div className="flex gap-2">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <button onClick={startSession}>Start New Session</button>
+          <input
+            placeholder="Enter Session ID"
+            onChange={(e) => setSessionId(e.target.value)}
+          />
+          <button onClick={joinSession}>Join Session</button>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
             <select onChange={(e) => setInputLang(e.target.value)} defaultValue="en">
               <option value="en">English</option>
               <option value="hr">Croatian</option>
@@ -91,21 +92,17 @@ export default function TranslatorApp() {
           </div>
         </div>
       ) : (
-        <div className="space-y-4">
-          <Card>
-            <CardContent>
-              <div className="space-y-2">
-                {messages.map((msg, i) => (
-                  <div key={i} className="bg-gray-100 p-2 rounded">
-                    <strong>{msg.user}:</strong> {msg.text}
-                  </div>
-                ))}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div style={{ border: '1px solid #ccc', padding: '1rem', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
+            {messages.map((msg, i) => (
+              <div key={i} style={{ backgroundColor: '#eee', padding: '0.5rem', borderRadius: '4px', marginBottom: '0.5rem' }}>
+                <strong>{msg.user}:</strong> {msg.text}
               </div>
-            </CardContent>
-          </Card>
-          <Button onClick={handleRecordAndSend} disabled={recording}>
+            ))}
+          </div>
+          <button onClick={handleRecordAndSend} disabled={recording}>
             {recording ? 'Recording...' : 'Speak'}
-          </Button>
+          </button>
         </div>
       )}
     </div>
