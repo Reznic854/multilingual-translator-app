@@ -1,11 +1,10 @@
 // Multilingual Conversation Translator (React + Supabase + OpenAI Whisper & GPT-4)
 // MVP implementation: Users join a session, speak, and see live translated text
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { createClient } from '@supabase/supabase-js';
 
-// ✅ Pull from Vite env or fallback to hardcoded values for local testing
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://YOUR_REAL_PROJECT.supabase.co';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'YOUR_REAL_ANON_KEY';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -17,6 +16,8 @@ export default function TranslatorApp() {
   const [outputLang, setOutputLang] = useState('hr');
   const [messages, setMessages] = useState([]);
   const [recording, setRecording] = useState(false);
+  const [status, setStatus] = useState('');
+  const recorderRef = useRef(null);
 
   useEffect(() => {
     if (joined) {
@@ -24,6 +25,7 @@ export default function TranslatorApp() {
       channel.on('broadcast', { event: 'new-message' }, ({ payload }) => {
         console.log('Received message:', payload);
         setMessages((prev) => [...prev, payload]);
+        setStatus('Translation received.');
       });
       channel.subscribe();
     }
@@ -39,11 +41,19 @@ export default function TranslatorApp() {
     if (sessionId.trim()) setJoined(true);
   };
 
+  const stopRecording = () => {
+    if (recorderRef.current) {
+      recorderRef.current.stop();
+    }
+  };
+
   const handleRecordAndSend = async () => {
     try {
+      setStatus('Recording...');
       setRecording(true);
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
+      recorderRef.current = mediaRecorder;
       const audioChunks = [];
 
       mediaRecorder.ondataavailable = (e) => {
@@ -51,6 +61,7 @@ export default function TranslatorApp() {
       };
 
       mediaRecorder.onstop = async () => {
+        setStatus('Sending for translation...');
         const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
         const formData = new FormData();
         formData.append('file', audioBlob);
@@ -58,19 +69,30 @@ export default function TranslatorApp() {
         formData.append('outputLang', outputLang);
         formData.append('sessionId', sessionId);
 
-        const res = await fetch('/api/translate', {
-          method: 'POST',
-          body: formData,
-        });
+        try {
+          const res = await fetch('/api/translate', {
+            method: 'POST',
+            body: formData,
+          });
 
-        const result = await res.json();
-        console.log('API result:', result);
+          const result = await res.json();
+          console.log('API result:', result);
+          if (!res.ok || result.error) {
+            setStatus('Translation failed.');
+          }
+        } catch (err) {
+          console.error('Translation error:', err);
+          setStatus('Translation failed.');
+        } finally {
+          setRecording(false);
+        }
       };
 
       mediaRecorder.start();
-      setTimeout(() => mediaRecorder.stop(), 5000); // 5 sec recording
+      setTimeout(() => mediaRecorder.stop(), 5000); // auto stop after 5 seconds
     } catch (error) {
       console.error('Recording failed:', error);
+      setStatus('Recording error.');
       setRecording(false);
     }
   };
@@ -110,6 +132,8 @@ export default function TranslatorApp() {
           <button onClick={handleRecordAndSend} disabled={recording}>
             {recording ? 'Recording...' : 'Speak'}
           </button>
+          {recording && <button onClick={stopRecording}>Stop</button>}
+          <div style={{ color: '#555', fontSize: '14px' }}>{status}</div>
         </div>
       )}
     </div>
